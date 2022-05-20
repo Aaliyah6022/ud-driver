@@ -1,0 +1,88 @@
+;
+; uddriver.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=USBDevice
+ClassGuid={88BAE032-5A81-49f0-BC3D-A4FF138216D6}
+Provider=%ManufacturerName%
+CatalogFile=uddriver.cat
+DriverVer=
+PnpLockDown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+uddriver_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+uddriver.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%uddriver.DeviceDesc%=uddriver_Device, USB\VID_vvvv&PID_pppp
+
+[uddriver_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+uddriver.sys
+
+[uddriver_Device.NT.HW]
+AddReg=uddriver_AddReg
+
+[uddriver_AddReg]
+; By default, USBDevice class uses iProduct descriptor to name the device in
+; Device Manager on Windows 8 and higher.
+; Uncomment for this device to use %DeviceName% on Windows 8 and higher:
+;HKR,,FriendlyName,,%uddriver.DeviceDesc%
+
+;-------------- Service installation
+[uddriver_Device.NT.Services]
+AddService = uddriver,%SPSVCINST_ASSOCSERVICE%, uddriver_Service_Inst
+
+; -------------- uddriver driver install sections
+[uddriver_Service_Inst]
+DisplayName    = %uddriver.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\uddriver.sys
+
+;
+;--- uddriver_Device Coinstaller installation ------
+;
+
+[uddriver_Device.NT.CoInstallers]
+AddReg=uddriver_Device_CoInstaller_AddReg
+CopyFiles=uddriver_Device_CoInstaller_CopyFiles
+
+[uddriver_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[uddriver_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[uddriver_Device.NT.Wdf]
+KmdfService =  uddriver, uddriver_wdfsect
+[uddriver_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Universal Serial Bus devices"
+DiskName = "uddriver Installation Disk"
+uddriver.DeviceDesc = "uddriver Device"
+uddriver.SVCDESC = "uddriver Service"
+REG_MULTI_SZ = 0x00010000
